@@ -19,7 +19,9 @@ SOURCE = Path(__file__).resolve().parent
 class InstallerTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix='t3-laptop-')
-        self.root = Path(self.temp.name) / '노트북 설치 폴더'
+        # Hosted Windows runners may expose TEMP using an 8.3 alias. Compare
+        # canonical paths, as PowerShell expands that alias while installing.
+        self.root = Path(self.temp.name).resolve() / '노트북 설치 폴더'
         self.source = self.root / 'package'
         self.home = self.root / 'T3 data'
         self.codex = self.root / 'Codex data'
