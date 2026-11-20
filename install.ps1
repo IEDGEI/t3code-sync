@@ -11,6 +11,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $sourceDir = $PSScriptRoot
+. (Join-Path $sourceDir 'shortcut.ps1')
 
 function Resolve-Executable([string]$Given, [string]$CommandName, [string[]]$Fallbacks) {
     if ($Given) {
@@ -56,11 +57,10 @@ function Resolve-T3Executable([string]$Given, [string]$T3DataRoot) {
             if ($entry.InstallLocation) { $candidates.Add((Join-Path $entry.InstallLocation 'T3 Code (Beta).exe')) }
         }
     }
-    $shell = New-Object -ComObject WScript.Shell
     foreach ($folder in @([Environment]::GetFolderPath('Desktop'), [Environment]::GetFolderPath('Programs'))) {
         if (-not $folder -or -not (Test-Path -LiteralPath $folder)) { continue }
         foreach ($link in @(Get-ChildItem -LiteralPath $folder -Filter '*T3*.lnk' -File -Recurse -ErrorAction SilentlyContinue)) {
-            $shortcut = $shell.CreateShortcut($link.FullName)
+            $shortcut = Read-T3Shortcut $link.FullName
             foreach ($value in @($shortcut.TargetPath, $shortcut.IconLocation)) {
                 if ($value -match '^"?(.+?T3 Code[^\\]*\.exe)"?(?:,\d+)?$') { $candidates.Add($Matches[1]) }
             }
@@ -111,13 +111,12 @@ $ShortcutDir = [IO.Path]::GetFullPath($ShortcutDir)
 $desktopShortcut = Join-Path $ShortcutDir 'T3 Code (Auto Sync).lnk'
 $stateDir = Join-Path $T3Home 'codex-autosync'
 $config = [ordered]@{ t3_home=$T3Home; t3_exe=$T3Exe; codex_home=$CodexHome; state_dir=$stateDir; node_exe=$NodeExe }
-$shell = New-Object -ComObject WScript.Shell
 $shortcutPaths = New-Object 'System.Collections.Generic.List[string]'
 $shortcutPaths.Add($desktopShortcut)
 if (-not $SkipExistingShortcuts) {
     foreach ($folder in @($ShortcutDir, (Split-Path -Parent $T3Exe))) {
         foreach ($link in @(Get-ChildItem -LiteralPath $folder -Filter '*.lnk' -File -ErrorAction SilentlyContinue)) {
-            $shortcut = $shell.CreateShortcut($link.FullName)
+            $shortcut = Read-T3Shortcut $link.FullName
             if ($shortcut.TargetPath -eq $T3Exe -and -not $shortcut.Arguments) { $shortcutPaths.Add($link.FullName) }
         }
     }
@@ -147,12 +146,7 @@ foreach ($shortcutPath in $shortcutPaths) {
         $stamp = Get-Date -Format 'yyyyMMdd-HHmmss-ffff'
         Copy-Item -LiteralPath $shortcutPath -Destination (Join-Path $backupDir "$stamp-$([IO.Path]::GetFileName($shortcutPath))")
     }
-    $shortcut = $shell.CreateShortcut($shortcutPath)
-    $shortcut.TargetPath = $pythonwExe
-    $shortcut.Arguments = '"' + (Join-Path $InstallDir 'autosync.py') + '" --launch'
-    $shortcut.WorkingDirectory = $InstallDir
-    $shortcut.IconLocation = $T3Exe + ',0'
-    $shortcut.Description = 'Update imported Codex chats, then start T3 Code.'
-    $shortcut.Save()
+    $arguments = '"' + (Join-Path $InstallDir 'autosync.py') + '" --launch'
+    [T3Sync.Shortcuts]::Save($shortcutPath, $pythonwExe, $arguments, $InstallDir, $T3Exe)
 }
 [ordered]@{ installed=$InstallDir; shortcuts=$shortcutPaths; state=$stateDir; shortcutBackups=$backupDir } | ConvertTo-Json -Depth 4

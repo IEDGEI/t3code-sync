@@ -7,6 +7,7 @@
 - Guard against running T3 instances, source changes and unsupported database schemas.
 - Back up and integrity-check the database before committing events and matching projections atomically.
 - Provide a Windows installer with runtime/app discovery, custom data paths and shortcut backups.
+- Use Unicode Shell links and explicitly closed SQLite connections across Windows locales and Python versions.
 - Include a read-only preview command, a public-file-only ZIP builder and synthetic regression tests.
 - Publish English/Korean documentation, recovery instructions and upstream MIT notices.
 

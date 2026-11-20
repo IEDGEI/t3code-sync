@@ -30,7 +30,7 @@ class InstallerTests(unittest.TestCase):
         for folder in (self.source, self.shortcuts, self.codex, self.exe.parent, self.db.parent, self.home / 'bin'):
             folder.mkdir(parents=True, exist_ok=True)
         self.exe.write_bytes(b'not executed by installer tests')
-        for name in ('install.ps1', 'check-runtime.cjs', 'writer.cjs', 'README.md',
+        for name in ('install.ps1', 'shortcut.ps1', 'check-runtime.cjs', 'writer.cjs', 'README.md',
                      'README.ko.md', 'LICENSE', 'THIRD_PARTY_NOTICES.md',
                      'licenses/T3-CODE-MIT.txt', 'docs/RECOVERY.md'):
             (self.source / name).parent.mkdir(parents=True, exist_ok=True)
@@ -38,7 +38,7 @@ class InstallerTests(unittest.TestCase):
         subprocess.run(['node', '--disable-warning=ExperimentalWarning', '-e',
             "new(require('node:sqlite').DatabaseSync)(process.argv[1]).exec(require('node:fs').readFileSync(process.argv[2],'utf8'))",
             str(self.db), str(SOURCE / 'schema_fixture.sql')], check=True, capture_output=True)
-        with sqlite3.connect(str(self.codex / 'state_5.sqlite')) as db:
+        with sqlite3.connect(str(self.codex / 'state_5.sqlite'), factory=autosync.ClosingConnection) as db:
             db.execute('CREATE TABLE threads(id TEXT,rollout_path TEXT)')
         with autosync.readonly(self.db) as db:
             digest = autosync.schema_digest(db)
@@ -87,10 +87,10 @@ class InstallerTests(unittest.TestCase):
         self.assertTrue((self.install / 'docs/RECOVERY.md').is_file())
         inspect_script = self.root / 'inspect.ps1'
         inspect_output = self.root / 'shortcut.json'
-        inspect_script.write_text("param($Link,$Out)\n$s=(New-Object -ComObject WScript.Shell).CreateShortcut($Link)\n"
+        inspect_script.write_text("param($Link,$Out,$Helper)\n. $Helper\n$s=Read-T3Shortcut $Link\n"
             "[IO.File]::WriteAllText($Out,(@{target=$s.TargetPath;arguments=$s.Arguments;directory=$s.WorkingDirectory}|ConvertTo-Json),[Text.UTF8Encoding]::new($false))\n", encoding='utf-8')
         subprocess.run(['powershell.exe','-NoProfile','-ExecutionPolicy','Bypass','-File',str(inspect_script),
-            str(self.shortcuts / 'T3 Code (Auto Sync).lnk'),str(inspect_output)],check=True,capture_output=True)
+            str(self.shortcuts / 'T3 Code (Auto Sync).lnk'),str(inspect_output),str(self.source/'shortcut.ps1')],check=True,capture_output=True)
         shortcut=json.loads(inspect_output.read_text(encoding='utf-8'))
         self.assertEqual(Path(shortcut['target']),Path(sys.executable).with_name('pythonw.exe'))
         self.assertEqual(shortcut['arguments'],'"'+str(self.install / 'autosync.py')+'" --launch')
@@ -101,7 +101,7 @@ class InstallerTests(unittest.TestCase):
         self.assertEqual(before, self.db.read_bytes())
 
     def test_unsupported_t3_version_stops_before_install(self):
-        with sqlite3.connect(str(self.db)) as db:
+        with sqlite3.connect(str(self.db), factory=autosync.ClosingConnection) as db:
             db.execute('UPDATE effect_sql_migrations SET migration_id=82')
         before=self.db.read_bytes()
         result=self.call()

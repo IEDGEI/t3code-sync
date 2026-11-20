@@ -87,6 +87,29 @@ class ParserTests(unittest.TestCase):
 
 
 class FileTests(unittest.TestCase):
+    def test_readonly_context_closes_the_handle_without_gc(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / 'context.sqlite'
+            with sqlite3.connect(str(path), factory=a.ClosingConnection) as writable:
+                writable.execute('CREATE TABLE example(value TEXT)')
+            with a.readonly(path) as reader:
+                self.assertEqual(reader.execute('SELECT count(*) FROM example').fetchone()[0], 0)
+            with self.assertRaises(sqlite3.ProgrammingError):
+                reader.execute('SELECT 1')
+            path.unlink()  # Windows must allow this while reader is still referenced.
+
+    def test_closing_context_preserves_transaction_rollback(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / 'context.sqlite'
+            with sqlite3.connect(str(path), factory=a.ClosingConnection) as writable:
+                writable.execute('CREATE TABLE example(value TEXT)')
+            with self.assertRaises(RuntimeError):
+                with sqlite3.connect(str(path), factory=a.ClosingConnection) as writable:
+                    writable.execute("INSERT INTO example VALUES ('rolled back')")
+                    raise RuntimeError('cancel')
+            with a.readonly(path) as reader:
+                self.assertEqual(reader.execute('SELECT count(*) FROM example').fetchone()[0], 0)
+
     def test_partial_last_line_is_not_imported(self):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "a.jsonl"
@@ -130,7 +153,7 @@ class DatabaseTests(unittest.TestCase):
         subprocess.run(['node','--disable-warning=ExperimentalWarning','-e',
             "new(require('node:sqlite').DatabaseSync)(process.argv[1]).exec(require('node:fs').readFileSync(process.argv[2],'utf8'))",
             str(self.db_path),str(Path(__file__).with_name('schema_fixture.sql'))],check=True,capture_output=True)
-        db = sqlite3.connect(str(self.db_path))
+        db = sqlite3.connect(str(self.db_path), factory=a.ClosingConnection)
         db.execute("INSERT INTO orchestration_v2_projection_metadata VALUES ('thread-projections',2,0,'2026-11-20T00:00:00.000Z')")
         db.execute("INSERT INTO orchestration_v2_projection_threads(thread_id,project_id,title,default_provider,"
                    "runtime_mode,interaction_mode,created_at,updated_at,payload_json) "
@@ -150,15 +173,15 @@ class DatabaseTests(unittest.TestCase):
         self.temp.cleanup()
 
     def count(self):
-        with sqlite3.connect(str(self.db_path)) as db:
+        with sqlite3.connect(str(self.db_path), factory=a.ClosingConnection) as db:
             return db.execute("SELECT COUNT(*) FROM orchestration_events").fetchone()[0]
 
     def test_apply_creates_backup_and_matching_events_and_projections(self):
         backup = a.apply_plan(self.db_path, self.plan, self.root / "backups", lambda: False)
         self.assertEqual(self.count(), 2)
-        with sqlite3.connect(backup) as db:
+        with sqlite3.connect(backup, factory=a.ClosingConnection) as db:
             self.assertEqual(db.execute("SELECT COUNT(*) FROM orchestration_events").fetchone()[0], 0)
-        with sqlite3.connect(str(self.db_path)) as db:
+        with sqlite3.connect(str(self.db_path), factory=a.ClosingConnection) as db:
             self.assertEqual(db.execute("SELECT COUNT(*) FROM orchestration_v2_projection_messages").fetchone()[0], 1)
             self.assertEqual(db.execute("SELECT COUNT(*) FROM orchestration_v2_projection_turn_items").fetchone()[0], 1)
             self.assertEqual(db.execute("SELECT last_sequence FROM orchestration_v2_projection_metadata WHERE projection_name='thread-projections'").fetchone()[0], 2)
@@ -182,7 +205,7 @@ class DatabaseTests(unittest.TestCase):
         self.assertEqual(self.count(), 0)
 
     def test_unknown_t3_migration_refuses_writes(self):
-        with sqlite3.connect(str(self.db_path)) as db:
+        with sqlite3.connect(str(self.db_path), factory=a.ClosingConnection) as db:
             db.execute("UPDATE effect_sql_migrations SET migration_id=82")
         with self.assertRaises(a.SyncError):
             a.apply_plan(self.db_path, self.plan, self.root / 'backups', lambda: False)
@@ -222,13 +245,13 @@ class DatabaseTests(unittest.TestCase):
                    record('assistant','new answer','2026-11-20T08:12:00.000Z'),
                    terminal('2026-11-20T08:13:00.000Z')]
         transcript.write_text(''.join(json.dumps(r)+'\n' for r in records),encoding='utf-8')
-        with sqlite3.connect(str(codex/'state_5.sqlite')) as db:
+        with sqlite3.connect(str(codex/'state_5.sqlite'), factory=a.ClosingConnection) as db:
             db.execute('CREATE TABLE threads(id TEXT,rollout_path TEXT)')
             db.execute('INSERT INTO threads VALUES (?,?)',('source',str(transcript)))
         thread={'id':'import:codex:source','historyOrigin':'v1_import','modelSelection':{'instanceId':'codex'},'updatedAt':at}
         baseline=dict(id='baseline',threadId=thread['id'],runId=None,nodeId=None,
                       role='user',text='baseline',createdAt=at,updatedAt=at,streaming=False)
-        with sqlite3.connect(str(self.db_path)) as db:
+        with sqlite3.connect(str(self.db_path), factory=a.ClosingConnection) as db:
             db.execute('UPDATE orchestration_v2_projection_threads SET thread_id=?,payload_json=?',
                        (thread['id'],json.dumps(thread)))
         subprocess.run(['node','--disable-warning=ExperimentalWarning','-e',
@@ -248,7 +271,7 @@ class DatabaseTests(unittest.TestCase):
 
     def test_planner_pauses_chats_continued_inside_t3(self):
         codex=self.prepare_source()
-        with sqlite3.connect(str(self.db_path)) as db:
+        with sqlite3.connect(str(self.db_path), factory=a.ClosingConnection) as db:
             db.execute("INSERT INTO orchestration_v2_projection_runs(run_id,thread_id,ordinal,provider,status,requested_at,payload_json) VALUES ('run','import:codex:source',1,'codex','completed','0','{}')")
         plan=a.build_plan(self.db_path,codex)
         self.assertEqual(plan['messages'],0)
@@ -259,7 +282,7 @@ class DatabaseTests(unittest.TestCase):
         home=self.root/'t3'
         (home/'userdata').mkdir(parents=True)
         copied=home/'userdata'/'statev2.sqlite'
-        with a.readonly(self.db_path) as source, sqlite3.connect(str(copied)) as target:
+        with a.readonly(self.db_path) as source, sqlite3.connect(str(copied), factory=a.ClosingConnection) as target:
             source.backup(target)
         config=self.root/'config.json'
         config.write_text(json.dumps(dict(t3_home=str(home),codex_home=str(codex))),encoding='utf-8')
@@ -287,7 +310,7 @@ class DatabaseTests(unittest.TestCase):
         home=self.root/'t3'
         (home/'userdata').mkdir(parents=True)
         copied=home/'userdata'/'statev2.sqlite'
-        with a.readonly(self.db_path) as source, sqlite3.connect(str(copied)) as target:
+        with a.readonly(self.db_path) as source, sqlite3.connect(str(copied), factory=a.ClosingConnection) as target:
             source.backup(target)
         fake_exe=Path(a.__file__).resolve()
         config=dict(t3_home=str(home),codex_home=str(codex),t3_exe=str(fake_exe),state_dir=str(self.root/'state'))

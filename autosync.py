@@ -37,13 +37,23 @@ class SyncError(Exception):
     pass
 
 
+class ClosingConnection(sqlite3.Connection):
+    """Commit/rollback like sqlite3's context manager, then release the handle."""
+    def __exit__(self, exc_type, exc_value, traceback):
+        try:
+            return super().__exit__(exc_type, exc_value, traceback)
+        finally:
+            self.close()
+
+
 def json_text(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
 
 
 def readonly(path: Path) -> sqlite3.Connection:
     # Path.as_uri quotes Korean names, spaces, '#' and '?' safely.
-    db = sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True, timeout=5)
+    db = sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True, timeout=5,
+                         factory=ClosingConnection)
     db.row_factory = sqlite3.Row
     db.execute("PRAGMA query_only=ON")
     return db
@@ -486,7 +496,7 @@ def apply_plan(db_path: Path, plan, backup_dir: Path, guard, node_exe=None):
         backup_dir.mkdir(parents=True, exist_ok=True)
         stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%S.%fZ")
         backup_path = backup_dir / ("statev2-before-sync-" + stamp + ".sqlite")
-        with readonly(db_path) as source, sqlite3.connect(str(backup_path)) as target:
+        with readonly(db_path) as source, sqlite3.connect(str(backup_path), factory=ClosingConnection) as target:
             source.backup(target)
             if target.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
                 raise SyncError("Backup verification failed; no changes were made.")
