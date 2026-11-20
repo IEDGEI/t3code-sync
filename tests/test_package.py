@@ -1,4 +1,5 @@
 import hashlib
+import io
 from pathlib import Path
 import tempfile
 import unittest
@@ -13,7 +14,8 @@ import build_package
 class PackageTests(unittest.TestCase):
     def test_only_public_files_and_notices_are_packaged(self):
         with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
+            root = Path(temporary) / '한글 경로'
+            root.mkdir()
             for name in build_package.FILES:
                 path = root / name
                 path.parent.mkdir(parents=True, exist_ok=True)
@@ -21,8 +23,12 @@ class PackageTests(unittest.TestCase):
             (root / 'config.json').write_text('{"private":true}', encoding='utf-8')
             (root / 'statev2.sqlite').write_bytes(b'private data')
             (root / '노트북 설치 안내.md').write_text('personal guide', encoding='utf-8')
-            with patch.object(build_package, 'ROOT', root):
+            output_bytes = io.BytesIO()
+            console = io.TextIOWrapper(output_bytes, encoding='cp1252')
+            with patch.object(build_package, 'ROOT', root), patch('sys.stdout', console):
                 output = build_package.build()
+            console.flush()
+            self.assertIn(b'Files:', output_bytes.getvalue())
             with zipfile.ZipFile(output) as archive:
                 expected = {build_package.FOLDER + '/' + build_package.package_name(name)
                             for name in build_package.FILES}

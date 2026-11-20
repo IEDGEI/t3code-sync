@@ -1,6 +1,7 @@
 """Build a portable Windows package using an explicit public-file allowlist."""
 import hashlib
 from pathlib import Path
+import sys
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -44,7 +45,9 @@ def build():
     temporary.replace(output)
     checksum = hashlib.sha256(output.read_bytes()).hexdigest()
     (output.parent / 'SHA256SUMS.txt').write_text(checksum + '  ' + output.name + '\n', encoding='utf-8')
-    print(str(output))
+    # A redirected English Windows console may not represent a Unicode path.
+    encoding = sys.stdout.encoding or 'utf-8'
+    print(str(output).encode(encoding, errors='backslashreplace').decode(encoding))
     print('Files:', len(FILES) + 1)
     print('Bytes:', output.stat().st_size)
     print('SHA256:', checksum)
