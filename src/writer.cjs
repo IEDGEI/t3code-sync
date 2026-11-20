@@ -23,16 +23,31 @@ function snapshotToken() {
     'SELECT * FROM orchestration_v2_projection_metadata ORDER BY projection_name',
     'SELECT thread_id,payload_json FROM orchestration_v2_projection_threads ORDER BY thread_id',
     'SELECT message_id,payload_json FROM orchestration_v2_projection_messages ORDER BY message_id',
+    'SELECT project_id,title,workspace_root,deleted_at,archived_at FROM projection_projects ORDER BY project_id',
+    'SELECT provider_thread_id,payload_json FROM orchestration_v2_projection_provider_threads ORDER BY provider_thread_id',
+    'SELECT thread_id,runtime_payload_json FROM provider_session_runtime ORDER BY thread_id',
   ]) for (const row of rows(query)) digest.update(JSON.stringify(row) + '\n');
   return digest.digest('hex');
 }
 function project(event) {
   const p = event.payload;
-  if ((p.threadId || p.id) !== event.threadId && event.type === 'thread.metadata-updated')
+  if ((p.threadId || p.id) !== event.threadId && ['thread.metadata-updated','thread.created'].includes(event.type))
     throw Error('Thread identity mismatch.');
-  if (event.type !== 'thread.metadata-updated' && p.threadId !== event.threadId)
+  if (event.type === 'provider-thread.updated' && p.appThreadId !== event.threadId)
+    throw Error('Provider thread identity mismatch.');
+  if (!['thread.metadata-updated','thread.created','provider-thread.updated'].includes(event.type) && p.threadId !== event.threadId)
     throw Error('Message thread identity mismatch.');
-  if (event.type === 'message.updated') {
+  if (event.type === 'thread.created') {
+    if (p.historyOrigin !== 'v1_import' || p.providerInstanceId !== 'codex' ||
+        !db.prepare('SELECT 1 FROM projection_projects WHERE project_id=? AND deleted_at IS NULL AND archived_at IS NULL').get(p.projectId))
+      throw Error('Unsupported initial import project or provider.');
+    db.prepare(`INSERT INTO orchestration_v2_projection_threads
+      (thread_id,project_id,title,default_provider,runtime_mode,interaction_mode,active_provider_thread_id,
+       created_at,updated_at,archived_at,deleted_at,payload_json,provider_instance_id)
+      VALUES (?,?,?,'codex',?,?,?,?,?,NULL,NULL,?,'codex')`).run(
+      p.id,p.projectId,p.title,p.runtimeMode,p.interactionMode,p.activeProviderThreadId,
+      p.createdAt,p.updatedAt,JSON.stringify(p));
+  } else if (event.type === 'message.updated') {
     if (!['user','assistant'].includes(p.role) || p.streaming || p.runId !== null || p.nodeId !== null)
       throw Error('Unsupported message shape.');
     db.prepare(`INSERT INTO orchestration_v2_projection_messages
@@ -40,7 +55,7 @@ function project(event) {
       VALUES (?,?,NULL,NULL,?,0,?,?,?,?)`).run(
       p.id, p.threadId, p.role, p.createdAt, p.updatedAt, JSON.stringify(p), p.text);
   } else if (event.type === 'turn-item.updated') {
-    if (!['user_message','assistant_message'].includes(p.type) || p.runId !== null || p.nodeId !== null)
+    if (!['user_message','assistant_message','system_notice'].includes(p.type) || p.runId !== null || p.nodeId !== null)
       throw Error('Unsupported timeline item shape.');
     db.prepare(`INSERT INTO orchestration_v2_projection_turn_items
       (turn_item_id,thread_id,run_id,node_id,provider_thread_id,provider_turn_id,parent_item_id,
@@ -50,10 +65,37 @@ function project(event) {
     db.prepare(`INSERT INTO orchestration_v2_turn_item_positions(thread_id,turn_item_id,ordinal)
       VALUES (?,?,?)`).run(p.threadId,p.id,p.ordinal);
   } else if (event.type === 'thread.metadata-updated') {
+    const previous = db.prepare('SELECT project_id FROM orchestration_v2_projection_threads WHERE thread_id=?').get(event.threadId);
+    if (p.projectId && p.projectId !== previous?.project_id) {
+      const project = db.prepare('SELECT workspace_root FROM projection_projects WHERE project_id=? AND deleted_at IS NULL AND archived_at IS NULL').get(p.projectId);
+      if (!project) throw Error('Destination T3 project is unavailable.');
+      db.prepare('UPDATE orchestration_v2_projection_threads SET project_id=? WHERE thread_id=?').run(p.projectId,event.threadId);
+      db.prepare(`UPDATE provider_session_runtime SET runtime_payload_json=json_set(COALESCE(runtime_payload_json,'{}'),'$.cwd',?)
+        WHERE thread_id=?`).run(project.workspace_root,event.threadId);
+    }
     const result = db.prepare(`UPDATE orchestration_v2_projection_threads
       SET updated_at=?,payload_json=? WHERE thread_id=? AND deleted_at IS NULL`).run(
       p.updatedAt,JSON.stringify(p),event.threadId);
     if (result.changes !== 1) throw Error('Imported T3 thread is missing.');
+  } else if (event.type === 'provider-thread.updated') {
+    const native = p.nativeThreadRef?.nativeId;
+    if (p.driver !== 'codex' || p.providerInstanceId !== 'codex' || !native)
+      throw Error('Unsupported native provider thread.');
+    const owner = db.prepare(`SELECT thread_id FROM orchestration_v2_projection_provider_threads WHERE driver='codex'
+      AND provider_instance_id='codex' AND json_extract(payload_json,'$.nativeThreadRef.nativeId')=?`).get(native);
+    if (owner && owner.thread_id !== p.appThreadId) throw Error('Native Codex thread already has a T3 owner.');
+    db.prepare(`INSERT INTO orchestration_v2_projection_provider_threads
+      (provider_thread_id,thread_id,owner_node_id,provider,provider_session_id,status,first_run_ordinal,
+       last_run_ordinal,updated_at,payload_json,driver,provider_instance_id)
+      VALUES (?,?,NULL,'codex',NULL,'idle',NULL,NULL,?,?,'codex','codex')`).run(
+      p.id,p.appThreadId,p.updatedAt,JSON.stringify(p));
+    const project = db.prepare(`SELECT p.workspace_root FROM projection_projects p JOIN orchestration_v2_projection_threads t
+      ON t.project_id=p.project_id WHERE t.thread_id=?`).get(p.appThreadId);
+    if (!project) throw Error('Imported thread project is unavailable.');
+    db.prepare(`INSERT INTO provider_session_runtime(thread_id,provider_name,adapter_key,runtime_mode,status,
+      last_seen_at,resume_cursor_json,runtime_payload_json,provider_instance_id)
+      VALUES (?,'codex','codex','full-access','stopped',?,?,?,'codex')`).run(
+      p.appThreadId,p.updatedAt,JSON.stringify({threadId:native}),JSON.stringify({cwd:project.workspace_root}));
   } else throw Error('Unsupported auto-sync event type.');
 }
 function prepare(input) {

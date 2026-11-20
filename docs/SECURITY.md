@@ -4,4 +4,6 @@ For a vulnerability, use GitHub's private vulnerability reporting when it is ena
 
 Do not upload T3 or Codex databases, credentials, transcripts, backup files, or unredacted logs. Status reports can include conversation titles, identifiers and personal file paths.
 
+The `source-cache` directory contains compressed selected conversation text and parser cursors. It is private, disposable local state; never attach it to a report or commit it. Cache/prefix checksums detect accidental damage and changed source history, not attacks by another process with control of the same user's files.
+
 The project writes T3's local database. Supported-schema checks, stopped-app guards, verified backups and atomic transactions are part of the security boundary and must not be bypassed to enable an unsupported version.

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.1.0 — Windows preview
+
+- Import missing Codex user chats into existing active T3 projects using current Codex membership, including moved chats whose original transcript names an older folder.
+- Correct eligible imported chats' project links and resume directories without creating duplicate native-thread owners.
+- Stream large JSONL files with bounded field selection; cache compressed text and parser cursors, parse appended records incrementally, and verify source prefixes with SHA-256.
+- Preserve partial tails, rescan changed/replaced/truncated sources and damaged caches, and keep preview read-only.
+- Initialize canonical thread/provider events, runtime resume data and matching projections atomically with verified backups.
+- Keep initial history to the first message and recent history, up to 200 messages, with an explicit notice for omitted earlier messages.
+- Exclude archived/subagent sources, deleted T3 chats and ambiguous/native-owned matches; pause project moves for native T3 activity or branch/worktree settings.
+
 ## 1.0.3 — Windows preview
 
 - Explain automatic desktop shortcut creation, which icons run sync, and the requirement to fully close T3 before launching.

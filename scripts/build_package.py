@@ -7,7 +7,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 FILES = (
     'scripts/Install.cmd', 'scripts/install.ps1', 'scripts/shortcut.ps1',
-    'scripts/check-runtime.cjs', 'src/autosync.py', 'src/writer.cjs',
+    'scripts/check-runtime.cjs', 'src/autosync.py', 'src/transcripts.py', 'src/writer.cjs',
     'README.md', 'README.ko.md', 'LICENSE', 'licenses/T3-CODE-MIT.txt',
     'docs/THIRD_PARTY_NOTICES.md', 'docs/RECOVERY.md', 'docs/CONTRIBUTING.md',
     'docs/github.md',

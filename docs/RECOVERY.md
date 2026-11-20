@@ -22,3 +22,7 @@ Custom `T3CODE_HOME` installations use the corresponding `userdata` and `codex-a
 4. The `tools\codex-autosync` program directory can then be removed. Keep `codex-autosync\backups` if you might need a database recovery later.
 
 These steps remove the launcher only. They do not delete Codex conversations or undo messages already appended to T3. Use database recovery only when you explicitly intend to restore an earlier database state.
+
+## Rebuild a transcript cache
+
+With the auto-sync launcher stopped, remove its `codex-autosync\source-cache` directory if needed. The next launch reads Codex again and rebuilds the cache. This does not remove T3 messages or Codex history. Caches contain conversation text and should remain private alongside backups.

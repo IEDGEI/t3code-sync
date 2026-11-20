@@ -195,10 +195,11 @@ class DatabaseTests(unittest.TestCase):
         self.assertEqual(self.count(), 0)
 
     def test_t3_starting_mid_transaction_rolls_back(self):
-        states = iter([False, True])
-        with self.assertRaises(a.SyncError):
-            a.apply_plan(self.db_path, self.plan, self.root / "backups", lambda: next(states))
-        self.assertEqual(self.count(), 0)
+        for values in ([False,True],[False,False,True]):
+            states = iter(values)
+            with self.assertRaises(a.SyncError):
+                a.apply_plan(self.db_path, self.plan, self.root / "backups", lambda: next(states))
+            self.assertEqual(self.count(), 0)
 
     def test_changed_database_refuses_writes(self):
         self.plan["snapshot"] = "wrong"

@@ -2,6 +2,7 @@ __pycache__/
 .reference/
 .test-data/
 state/
+source-cache/
 config.json
 verification-output.txt
 dist/

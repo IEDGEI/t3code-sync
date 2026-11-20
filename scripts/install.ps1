@@ -100,7 +100,7 @@ try {
 } finally { $env:NODE_NO_WARNINGS = $previousWarnings }
 
 $database = Join-Path $T3Home 'userdata\statev2.sqlite'
-if (-not (Test-Path -LiteralPath $database -PathType Leaf)) { throw 'Open T3 and import the desired Codex conversations before installing auto-sync.' }
+if (-not (Test-Path -LiteralPath $database -PathType Leaf)) { throw 'Open T3 and add the target projects before installing auto-sync.' }
 if (-not (Test-Path -LiteralPath (Join-Path $CodexHome 'state_5.sqlite') -PathType Leaf)) { throw 'Local Codex history was not found. Open Codex first, or specify -CodexHome.' }
 $schemaResult = & $PythonExe -B -c 'import sys,pathlib;sys.path.insert(0,sys.argv[1]);import autosync;db=autosync.readonly(pathlib.Path(sys.argv[2]));autosync.verify_schema(db);db.close();print(True)' $codeDir $database
 if ($LASTEXITCODE -ne 0) { throw 'Unsupported T3 database schema. Nothing was installed or changed.' }
@@ -131,11 +131,12 @@ if ($Preview) {
 New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
 New-Item -ItemType Directory -Path $stateDir -Force | Out-Null
 $installFiles = [ordered]@{
-    'src\autosync.py'='autosync.py'; 'src\writer.cjs'='writer.cjs';
+    'src\autosync.py'='autosync.py'; 'src\transcripts.py'='transcripts.py'; 'src\writer.cjs'='writer.cjs';
     'README.md'='README.md'; 'README.ko.md'='README.ko.md'; 'LICENSE'='LICENSE';
     'docs\THIRD_PARTY_NOTICES.md'='docs\THIRD_PARTY_NOTICES.md';
     'licenses\T3-CODE-MIT.txt'='licenses\T3-CODE-MIT.txt';
     'docs\RECOVERY.md'='docs\RECOVERY.md'
+    'docs\CONTRIBUTING.md'='docs\CONTRIBUTING.md'; 'docs\github.md'='docs\github.md'
 }
 foreach ($entry in $installFiles.GetEnumerator()) {
     $source = Join-Path $sourceDir $entry.Key
