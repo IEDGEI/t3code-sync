@@ -10,7 +10,7 @@ Release target: `v1.0.3-windows-preview`.
 - Python compilation and JavaScript/PowerShell syntax checks passed.
 - Public source was scanned for the originating user's private paths, email address, credential patterns and private-key headers; no matches were found.
 
-The installer tests use a schema-only database and synthetic Codex records. They cover preview without mutation, Unicode/space-containing paths, app discovery, installation/reinstallation from the extracted release ZIP, automatic dedicated shortcut creation, existing desktop/app-folder shortcut redirection and backups, preservation of custom arguments and unrelated shortcuts, and rejection of unsupported T3 versions before installation.
+The installer tests use a schema-only database and synthetic Codex records. They cover preview without mutation, Unicode/space-containing paths, app discovery, installation/reinstallation from the extracted release ZIP, automatic dedicated shortcut creation, existing desktop/app-folder shortcut redirection and backups (including same-named icons with identical backup timestamps), preservation of custom arguments and unrelated shortcuts, and rejection of unsupported T3 versions before installation.
 
 ## Actual T3 validation
 

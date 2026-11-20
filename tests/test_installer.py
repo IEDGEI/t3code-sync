@@ -126,6 +126,11 @@ class InstallerTests(unittest.TestCase):
 
     def test_default_connects_existing_icons_and_preserves_custom_shortcuts(self):
         before = self.db.read_bytes()
+        # Reproduce coarse Windows clock resolution: both originals have the
+        # same filename and backup timestamp but must be preserved separately.
+        installer = self.source / 'scripts/install.ps1'
+        installer.write_text(installer.read_text(encoding='utf-8').replace(
+            "Get-Date -Format 'yyyyMMdd-HHmmss-ffff'", "'20000101-000000-0000'"),encoding='utf-8')
         desktop = self.shortcuts / 'T3 Code.lnk'
         app_folder = self.exe.parent / 'T3 Code.lnk'
         custom = self.shortcuts / 'T3 custom.lnk'
@@ -154,6 +159,7 @@ class InstallerTests(unittest.TestCase):
         self.assertEqual(custom.read_bytes(),originals[custom])
         self.assertEqual(unrelated.read_bytes(),originals[unrelated])
         backups = list((self.home/'codex-autosync'/'shortcut-backups').glob('*.lnk'))
+        self.assertEqual(len(backups),2,[link.name for link in backups])
         self.assertCountEqual([link.read_bytes() for link in backups],
                               [originals[desktop],originals[app_folder]])
         self.assertEqual(before,self.db.read_bytes())

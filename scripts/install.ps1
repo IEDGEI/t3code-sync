@@ -152,7 +152,12 @@ New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
 foreach ($shortcutPath in $shortcutPaths) {
     if (Test-Path -LiteralPath $shortcutPath) {
         $stamp = Get-Date -Format 'yyyyMMdd-HHmmss-ffff'
-        Copy-Item -LiteralPath $shortcutPath -Destination (Join-Path $backupDir "$stamp-$([IO.Path]::GetFileName($shortcutPath))")
+        $backupId = [Guid]::NewGuid().ToString('N')
+        $backupName = "$stamp-$backupId-$([IO.Path]::GetFileName($shortcutPath))"
+        $backupPath = Join-Path $backupDir $backupName
+        # Windows PowerShell's file cmdlets may still enforce MAX_PATH.
+        if ($backupPath.Length -ge 260) { $backupPath = Join-Path $backupDir "$backupId.lnk" }
+        Copy-Item -LiteralPath $shortcutPath -Destination $backupPath
     }
     $arguments = '"' + (Join-Path $InstallDir 'autosync.py') + '" --launch'
     [T3Sync.Shortcuts]::Save($shortcutPath, $pythonwExe, $arguments, $InstallDir, $T3Exe)

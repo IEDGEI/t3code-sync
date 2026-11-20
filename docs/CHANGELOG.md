@@ -6,6 +6,7 @@
 - Document reinstalling the current ZIP to upgrade or repair an installed launcher, and checking sync status.
 - Show the dedicated shortcut path in installer output and clarify the CMD completion message.
 - Cover automatic redirection and backup of existing desktop/app-folder shortcuts while preserving custom arguments and unrelated shortcuts.
+- Give shortcut backups unique filenames so same-named icons from different folders cannot overwrite one another within one clock tick.
 
 ## 1.0.2 — Windows preview
 
