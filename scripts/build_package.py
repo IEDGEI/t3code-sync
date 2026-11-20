@@ -3,14 +3,20 @@ import hashlib
 from pathlib import Path
 import zipfile
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[1]
 FILES = (
-    'Install.cmd', 'install.ps1', 'shortcut.ps1', 'check-runtime.cjs', 'autosync.py',
-    'writer.cjs', 'README.md', 'README.ko.md', '노트북 설치 안내.md', 'github.md',
-    'LICENSE', 'THIRD_PARTY_NOTICES.md', 'licenses/T3-CODE-MIT.txt',
-    'docs/RECOVERY.md', 'CONTRIBUTING.md',
+    'scripts/Install.cmd', 'scripts/install.ps1', 'scripts/shortcut.ps1',
+    'scripts/check-runtime.cjs', 'src/autosync.py', 'src/writer.cjs',
+    'README.md', 'README.ko.md', 'LICENSE', 'licenses/T3-CODE-MIT.txt',
+    'docs/THIRD_PARTY_NOTICES.md', 'docs/RECOVERY.md', 'docs/CONTRIBUTING.md',
+    'docs/github.md',
 )
 FOLDER = 'T3-Codex-AutoSync-Windows'
+
+
+def package_name(name):
+    # Keep one double-click installer at the top of the extracted ZIP.
+    return 'Install.cmd' if name == 'scripts/Install.cmd' else name
 
 
 def build():
@@ -24,10 +30,11 @@ def build():
             if not path.is_file() or path.is_symlink():
                 raise ValueError('Required package file is missing: ' + name)
             data = path.read_bytes()
-            if name == 'Install.cmd':
+            target = package_name(name)
+            if target == 'Install.cmd':
                 data = data.replace(b'\r\n', b'\n').replace(b'\n', b'\r\n')
-            archive.writestr(FOLDER + '/' + name, data)
-            checksums.append(hashlib.sha256(data).hexdigest() + '  ' + name)
+            archive.writestr(FOLDER + '/' + target, data)
+            checksums.append(hashlib.sha256(data).hexdigest() + '  ' + target)
         archive.writestr(FOLDER + '/SHA256SUMS.txt', '\n'.join(checksums) + '\n')
     with zipfile.ZipFile(temporary) as archive:
         assert archive.testzip() is None

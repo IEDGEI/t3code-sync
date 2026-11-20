@@ -1,5 +1,9 @@
 # Windows preview
 
+Version 1.0.2 organizes the project into `src/`, `scripts/`, `tests/` and `docs/`. The release ZIP retains a top-level `Install.cmd`. The personal laptop installation guide is excluded from public source and packages.
+
+The CMD launcher now handles its success message correctly and returns a failure exit code when installation fails.
+
 Refresh imported Codex chats before launching T3 Code. This is an independent community tool for Windows, tested against T3 Code 0.1.9 / migration 81 and a pinned schema fingerprint.
 
 ## Install

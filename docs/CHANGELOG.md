@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.2 — Windows preview
+
+- Organize runtime code, scripts, tests and supporting documentation into folders.
+- Keep a top-level installer in the release ZIP and verify installation from the extracted package.
+- Fix CMD handling of parentheses in the success message and preserve installer failure exit codes.
+- Remove the personal laptop installation guide from public source and packages.
+
 ## 1.0.1 — Windows preview
 
 - Update existing imported Codex conversations before launching T3 Code.

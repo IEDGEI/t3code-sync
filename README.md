@@ -2,7 +2,7 @@
 
 Refresh imported Codex chats before launching T3 Code.
 
-[한국어 안내](README.ko.md) · [Windows download](https://github.com/IEDGEI/t3code-sync/releases/tag/v1.0.1-windows-preview) · [Recovery](docs/RECOVERY.md) · [Roadmap](github.md)
+[한국어 안내](README.ko.md) · [Windows download](https://github.com/IEDGEI/t3code-sync/releases/tag/v1.0.2-windows-preview) · [Recovery](docs/RECOVERY.md) · [Roadmap](docs/github.md)
 
 **Windows preview.** Tested with T3 Code **0.1.9**, database migration **81** and a specific schema fingerprint. Other schemas are rejected before writing. Linux and macOS are not supported yet. This is an independent community tool, unaffiliated with T3 Tools or OpenAI.
 
@@ -21,7 +21,7 @@ Requirements:
 - Local Codex history at `CODEX_HOME` or `%USERPROFILE%\.codex`.
 - Python 3.9+ with `pythonw.exe`, and Node.js 22.13+ with modern SQLite/FTS5. Local validation used Python 3.9 and Node.js 24.15.
 
-1. Download **T3-Codex-AutoSync-Windows.zip** from the [Windows preview release](https://github.com/IEDGEI/t3code-sync/releases/tag/v1.0.1-windows-preview).
+1. Download **T3-Codex-AutoSync-Windows.zip** from the [Windows preview release](https://github.com/IEDGEI/t3code-sync/releases/tag/v1.0.2-windows-preview).
 2. Extract the archive, then run **Install.cmd**. Review the source before running it. Windows may display a warning because these scripts are unsigned.
 3. The installer finds the local executables and checks the database schema. It does not download dependencies or modify the T3 database.
 4. Fully close T3, then launch **T3 Code (Auto Sync)** from the desktop.
@@ -33,8 +33,8 @@ If T3 is already running, the shortcut opens the existing app without changing i
 For custom paths, run from the extracted directory:
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 -Preview
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 -T3Exe "D:\Apps\T3 Code (Beta).exe"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\install.ps1 -Preview
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\install.ps1 -T3Exe "D:\Apps\T3 Code (Beta).exe"
 ```
 
 Optional installer arguments: `-PythonExe`, `-NodeExe`, `-T3Home`, `-CodexHome`, `-InstallDir`, `-ShortcutDir`, `-SkipExistingShortcuts` and `-Preview`. `T3CODE_HOME` and `CODEX_HOME` take precedence over their default user directories.
@@ -80,12 +80,14 @@ Backups contain your T3 conversation database and should remain private. See [re
 
 No third-party Python or npm packages are required.
 
+Source code lives in `src/`, Windows installation and packaging scripts in `scripts/`, synthetic tests in `tests/`, and supporting documentation in `docs/`. To install from a source checkout, run `scripts\Install.cmd`. The release ZIP keeps `Install.cmd` at the top for convenience.
+
 ```powershell
-python -m unittest discover -s . -p "test_*.py" -v
-python -m py_compile autosync.py build_package.py
-node --check writer.cjs
-node --check check-runtime.cjs
-python build_package.py
+python -m unittest discover -s tests -p "test_*.py" -v
+python -m compileall -q src scripts tests
+node --check src/writer.cjs
+node --check scripts/check-runtime.cjs
+python scripts/build_package.py
 ```
 
 The database tests use a schema-only T3 fixture and synthetic messages. Installer tests create isolated temporary directories and never launch the dummy T3 executable. The Windows CI workflow runs the tests and builds the public-file-only archive.
@@ -101,8 +103,8 @@ python "$env:USERPROFILE\.t3\tools\codex-autosync\autosync.py" --apply
 
 ## Compatibility reports
 
-When reporting a problem, include OS, T3 version, Node/Python versions and the short error reason. Review logs and remove titles, identifiers and personal paths before sharing. Do not attach conversation databases, transcripts, credentials or backup files. See [CONTRIBUTING.md](CONTRIBUTING.md).
+When reporting a problem, include OS, T3 version, Node/Python versions and the short error reason. Review logs and remove titles, identifiers and personal paths before sharing. Do not attach conversation databases, transcripts, credentials or backup files. See [CONTRIBUTING.md](docs/CONTRIBUTING.md).
 
 ## License and provenance
 
-MIT. The schema fixture and T3-specific event/projection compatibility work reference T3 Code's MIT-licensed implementation. Upstream copyright and license text are retained in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and [licenses/T3-CODE-MIT.txt](licenses/T3-CODE-MIT.txt).
+MIT. The schema fixture and T3-specific event/projection compatibility work reference T3 Code's MIT-licensed implementation. Upstream copyright and license text are retained in [THIRD_PARTY_NOTICES.md](docs/THIRD_PARTY_NOTICES.md) and [licenses/T3-CODE-MIT.txt](licenses/T3-CODE-MIT.txt).

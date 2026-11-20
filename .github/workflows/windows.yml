@@ -31,15 +31,15 @@ jobs:
       - name: Compile and check syntax
         shell: pwsh
         run: |
-          python -m py_compile autosync.py build_package.py test_autosync.py test_installer.py
+          python -m compileall -q src scripts tests
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          node --check writer.cjs
+          node --check src/writer.cjs
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          node --check check-runtime.cjs
+          node --check scripts/check-runtime.cjs
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Run synthetic sync and installer tests
         shell: pwsh
-        run: python -m unittest discover -s . -p "test_*.py" -v
+        run: python -m unittest discover -s tests -p "test_*.py" -v
       - name: Build distribution
         shell: pwsh
-        run: python build_package.py
+        run: python scripts/build_package.py

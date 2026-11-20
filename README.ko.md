@@ -2,13 +2,17 @@
 
 **Windows 미리보기 버전입니다.** T3 Code 0.1.9 / 데이터베이스 마이그레이션 81 및 지정된 스키마에서 검증한 로컬 실행 도구입니다. Linux와 macOS는 아직 지원하지 않습니다. T3 Tools 및 OpenAI와 무관한 독립 커뮤니티 도구입니다.
 
-[Windows 다운로드](https://github.com/IEDGEI/t3code-sync/releases/tag/v1.0.1-windows-preview) · [English](README.md) · [복구 및 제거](docs/RECOVERY.md)
+[Windows 다운로드](https://github.com/IEDGEI/t3code-sync/releases/tag/v1.0.2-windows-preview) · [English](README.md) · [복구 및 제거](docs/RECOVERY.md)
 
-## 다른 Windows PC에 설치
+## Windows 설치
 
-노트북용 ZIP의 압축을 푼 뒤 `Install.cmd`를 실행합니다. T3·Python·Node.js 위치를 자동으로 찾고,
-노트북의 T3 데이터 호환성을 확인한 뒤 설치합니다. 상세 절차는 `노트북 설치 안내.md`를 참고하세요.
-이 패키지는 프로그램만 옮깁니다. PC와 노트북 사이의 대화나 파일을 전송하지 않습니다.
+1. Python 3.9 이상과 Node.js 22.13 이상을 설치하고, T3와 Codex를 한 번 실행합니다.
+2. T3에 갱신할 Codex 대화를 먼저 가져옵니다.
+3. [설치 ZIP](https://github.com/IEDGEI/t3code-sync/releases/tag/v1.0.2-windows-preview)의 압축을 풀고 `Install.cmd`를 실행합니다.
+4. 설치 후 T3를 완전히 닫고 바탕화면의 **T3 Code (Auto Sync)**로 실행합니다.
+
+설치 프로그램은 T3·Python·Node.js 위치와 T3 데이터 호환성을 확인합니다. 런타임을 자동으로 다운로드하지 않습니다.
+설치 패키지는 프로그램만 포함하며, 컴퓨터 사이의 대화나 파일을 전송하지 않습니다.
 
 ## 사용
 
@@ -53,13 +57,21 @@ T3가 이미 실행 중이면 기록을 수정하지 않고 기존 창을 엽니
 ## 개발과 진단
 
 ```powershell
-python autosync.py --preview   # 변경 없이 가져올 메시지 수 확인
-python autosync.py --apply     # T3가 종료됐을 때만 갱신
-python autosync.py --launch    # 갱신 후 T3 실행
-python -m unittest discover -s . -p "test_*.py" -v
-.\install.ps1 -Preview
-.\install.ps1
+python "$env:USERPROFILE\.t3\tools\codex-autosync\autosync.py" --preview
+python "$env:USERPROFILE\.t3\tools\codex-autosync\autosync.py" --apply
+python "$env:USERPROFILE\.t3\tools\codex-autosync\autosync.py" --launch
 ```
+
+저장소 루트에서 개발 검증 및 설치:
+
+```powershell
+python -m unittest discover -s tests -p "test_*.py" -v
+python scripts/build_package.py
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\install.ps1 -Preview
+.\scripts\Install.cmd
+```
+
+실행 코드는 `src/`, 설치·패키징 스크립트는 `scripts/`, 테스트는 `tests/`, 보조 문서는 `docs/`에 있습니다.
 
 `config.json`에는 T3 실행 파일, T3/Codex 데이터 폴더와 결과 저장 폴더를 지정합니다.
 설치 프로그램은 `T3CODE_HOME`과 `CODEX_HOME`을 우선 사용하며, 지정하지 않으면 사용자 폴더의 `.t3`와 `.codex`를 사용합니다.
@@ -69,6 +81,6 @@ T3 업데이트 후 DB 구조가 바뀌면 호환성을 재검증해야 합니�
 
 ## 라이선스와 상태 확인
 
-MIT 라이선스입니다. T3 코드에서 참고·적용한 스키마와 이벤트 형식의 저작권 고지는 `THIRD_PARTY_NOTICES.md`와 `licenses/T3-CODE-MIT.txt`에 보존했습니다.
+MIT 라이선스입니다. T3 코드에서 참고·적용한 스키마와 이벤트 형식의 저작권 고지는 [THIRD_PARTY_NOTICES.md](docs/THIRD_PARTY_NOTICES.md)와 [상위 프로젝트 라이선스](licenses/T3-CODE-MIT.txt)에 보존했습니다.
 갱신 오류가 나면 상태 파일에 오류를 기록한 뒤에도 T3가 열릴 수 있습니다. 갱신 성공 여부는 `last-sync.json`에서 확인하세요.
 로그에는 대화 제목·식별자·개인 경로가 포함될 수 있고 백업에는 대화 DB가 들어 있으므로 공유하기 전에 내용을 확인하세요.

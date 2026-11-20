@@ -10,8 +10,9 @@ param(
     [switch]$Preview
 )
 $ErrorActionPreference = 'Stop'
-$sourceDir = $PSScriptRoot
-. (Join-Path $sourceDir 'shortcut.ps1')
+$sourceDir = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+$codeDir = Join-Path $sourceDir 'src'
+. (Join-Path $PSScriptRoot 'shortcut.ps1')
 
 function Resolve-Executable([string]$Given, [string]$CommandName, [string[]]$Fallbacks) {
     if ($Given) {
@@ -92,7 +93,7 @@ if ($pythonVersion[0] -lt 3 -or ($pythonVersion[0] -eq 3 -and $pythonVersion[1] 
 $previousWarnings = $env:NODE_NO_WARNINGS
 try {
     $env:NODE_NO_WARNINGS = '1'
-    $nodeInfo = & $NodeExe (Join-Path $sourceDir 'check-runtime.cjs')
+    $nodeInfo = & $NodeExe (Join-Path $PSScriptRoot 'check-runtime.cjs')
     if ($LASTEXITCODE -ne 0) { throw 'Node.js 22.13+ with node:sqlite is required.' }
     $nodeVersion = $nodeInfo | ConvertFrom-Json
     if ([version]$nodeVersion.node -lt [version]'22.13.0' -or [version]$nodeVersion.sqlite -lt [version]'3.43.0') { throw 'A newer Node.js runtime is required.' }
@@ -101,7 +102,7 @@ try {
 $database = Join-Path $T3Home 'userdata\statev2.sqlite'
 if (-not (Test-Path -LiteralPath $database -PathType Leaf)) { throw 'Open T3 and import the desired Codex conversations before installing auto-sync.' }
 if (-not (Test-Path -LiteralPath (Join-Path $CodexHome 'state_5.sqlite') -PathType Leaf)) { throw 'Local Codex history was not found. Open Codex first, or specify -CodexHome.' }
-$schemaResult = & $PythonExe -B -c 'import sys,pathlib;sys.path.insert(0,sys.argv[1]);import autosync;db=autosync.readonly(pathlib.Path(sys.argv[2]));autosync.verify_schema(db);db.close();print(True)' $sourceDir $database
+$schemaResult = & $PythonExe -B -c 'import sys,pathlib;sys.path.insert(0,sys.argv[1]);import autosync;db=autosync.readonly(pathlib.Path(sys.argv[2]));autosync.verify_schema(db);db.close();print(True)' $codeDir $database
 if ($LASTEXITCODE -ne 0) { throw 'Unsupported T3 database schema. Nothing was installed or changed.' }
 if ($schemaResult -ne 'True') { throw 'T3 compatibility check returned an unexpected result.' }
 
@@ -129,9 +130,16 @@ if ($Preview) {
 
 New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
 New-Item -ItemType Directory -Path $stateDir -Force | Out-Null
-foreach ($name in @('autosync.py','writer.cjs','README.md','README.ko.md','LICENSE','THIRD_PARTY_NOTICES.md','licenses\T3-CODE-MIT.txt','docs\RECOVERY.md')) {
-    $source = Join-Path $sourceDir $name
-    $destination = Join-Path $InstallDir $name
+$installFiles = [ordered]@{
+    'src\autosync.py'='autosync.py'; 'src\writer.cjs'='writer.cjs';
+    'README.md'='README.md'; 'README.ko.md'='README.ko.md'; 'LICENSE'='LICENSE';
+    'docs\THIRD_PARTY_NOTICES.md'='docs\THIRD_PARTY_NOTICES.md';
+    'licenses\T3-CODE-MIT.txt'='licenses\T3-CODE-MIT.txt';
+    'docs\RECOVERY.md'='docs\RECOVERY.md'
+}
+foreach ($entry in $installFiles.GetEnumerator()) {
+    $source = Join-Path $sourceDir $entry.Key
+    $destination = Join-Path $InstallDir $entry.Value
     if ([IO.Path]::GetFullPath($source) -ne [IO.Path]::GetFullPath($destination)) {
         New-Item -ItemType Directory -Path (Split-Path -Parent $destination) -Force | Out-Null
         Copy-Item -LiteralPath $source -Destination $destination -Force

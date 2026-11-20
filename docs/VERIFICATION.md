@@ -1,6 +1,6 @@
 # Windows preview verification
 
-Release target: `v1.0.1-windows-preview`.
+Release target: `v1.0.2-windows-preview`.
 
 ## Local checks
 
@@ -10,7 +10,7 @@ Release target: `v1.0.1-windows-preview`.
 - Python compilation and JavaScript/PowerShell syntax checks passed.
 - Public source was scanned for the originating user's private paths, email address, credential patterns and private-key headers; no matches were found.
 
-The installer tests use a schema-only database and synthetic Codex records. They cover preview without mutation, Unicode/space-containing paths, app discovery, installation/reinstallation, Unicode Shell-link targets and backups, and rejection of unsupported T3 versions before installation.
+The installer tests use a schema-only database and synthetic Codex records. They cover preview without mutation, Unicode/space-containing paths, app discovery, installation/reinstallation from the extracted release ZIP, Unicode Shell-link targets and backups, and rejection of unsupported T3 versions before installation.
 
 ## Actual T3 validation
 

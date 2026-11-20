@@ -5,8 +5,8 @@ This preview supports Windows and one T3 database schema. Linux and macOS contri
 Run all tests and the package builder before opening a change:
 
 ```powershell
-python -m unittest discover -s . -p "test_*.py" -v
-python build_package.py
+python -m unittest discover -s tests -p "test_*.py" -v
+python scripts/build_package.py
 ```
 
 Use synthetic messages and a schema-only fixture. Never commit config files, transcripts, SQLite databases, local logs, backups, credentials or personal paths. An issue report should contain only the environment and a redacted error reason.
