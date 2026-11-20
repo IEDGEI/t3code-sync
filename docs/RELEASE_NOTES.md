@@ -1,8 +1,8 @@
 # Windows preview
 
-Version 1.0.2 organizes the project into `src/`, `scripts/`, `tests/` and `docs/`. The release ZIP retains a top-level `Install.cmd`. The personal laptop installation guide is excluded from public source and packages.
+Version 1.0.3 clarifies automatic shortcut creation and how to launch auto-sync. The installer creates **T3 Code (Auto Sync)** on the desktop, reports its path, and connects matching existing desktop/app-folder shortcuts by default. Original shortcuts are backed up; custom arguments are preserved.
 
-The CMD launcher now handles its success message correctly and returns a failure exit code when installation fails.
+Fully exit T3, then open the dedicated shortcut to refresh imported chats. If T3 is already running, the update is deferred. Start menu/taskbar entries are not changed. To upgrade or repair an existing launcher, extract the current ZIP and run `Install.cmd` again.
 
 Refresh imported Codex chats before launching T3 Code. This is an independent community tool for Windows, tested against T3 Code 0.1.9 / migration 81 and a pinned schema fingerprint.
 
@@ -10,7 +10,8 @@ Refresh imported Codex chats before launching T3 Code. This is an independent co
 
 1. Install Python 3.9+ and Node.js 22.13+ with modern SQLite/FTS5 if they are not already available.
 2. Download and extract `T3-Codex-AutoSync-Windows.zip`.
-3. Run `Install.cmd`, fully close T3, and use the **T3 Code (Auto Sync)** desktop shortcut.
+3. Run `Install.cmd`. It automatically creates the **T3 Code (Auto Sync)** desktop shortcut.
+4. Fully close T3, then open that shortcut.
 
 The installer checks local compatibility before installing. It does not download dependencies or write conversation databases. The runtime performs local sync without model calls or token usage.
 

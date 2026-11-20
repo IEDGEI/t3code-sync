@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.3 — Windows preview
+
+- Explain automatic desktop shortcut creation, which icons run sync, and the requirement to fully close T3 before launching.
+- Document reinstalling the current ZIP to upgrade or repair an installed launcher, and checking sync status.
+- Show the dedicated shortcut path in installer output and clarify the CMD completion message.
+- Cover automatic redirection and backup of existing desktop/app-folder shortcuts while preserving custom arguments and unrelated shortcuts.
+
 ## 1.0.2 — Windows preview
 
 - Organize runtime code, scripts, tests and supporting documentation into folders.

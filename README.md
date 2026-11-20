@@ -2,7 +2,7 @@
 
 Refresh imported Codex chats before launching T3 Code.
 
-[한국어 안내](README.ko.md) · [Windows download](https://github.com/IEDGEI/t3code-sync/releases/tag/v1.0.2-windows-preview) · [Recovery](docs/RECOVERY.md) · [Roadmap](docs/github.md)
+[한국어 안내](README.ko.md) · [Windows download](https://github.com/IEDGEI/t3code-sync/releases/tag/v1.0.3-windows-preview) · [Recovery](docs/RECOVERY.md) · [Roadmap](docs/github.md)
 
 **Windows preview.** Tested with T3 Code **0.1.9**, database migration **81** and a specific schema fingerprint. Other schemas are rejected before writing. Linux and macOS are not supported yet. This is an independent community tool, unaffiliated with T3 Tools or OpenAI.
 
@@ -21,14 +21,30 @@ Requirements:
 - Local Codex history at `CODEX_HOME` or `%USERPROFILE%\.codex`.
 - Python 3.9+ with `pythonw.exe`, and Node.js 22.13+ with modern SQLite/FTS5. Local validation used Python 3.9 and Node.js 24.15.
 
-1. Download **T3-Codex-AutoSync-Windows.zip** from the [Windows preview release](https://github.com/IEDGEI/t3code-sync/releases/tag/v1.0.2-windows-preview).
+1. Download **T3-Codex-AutoSync-Windows.zip** from the [Windows preview release](https://github.com/IEDGEI/t3code-sync/releases/tag/v1.0.3-windows-preview).
 2. Extract the archive, then run **Install.cmd**. Review the source before running it. Windows may display a warning because these scripts are unsigned.
-3. The installer finds the local executables and checks the database schema. It does not download dependencies or modify the T3 database.
+3. The installer finds the local executables, checks the database schema, and **automatically creates a desktop shortcut named T3 Code (Auto Sync)**. You do not need to create it yourself. It does not download dependencies or modify the T3 database.
 4. Fully close T3, then launch **T3 Code (Auto Sync)** from the desktop.
 
-Existing desktop or app-folder shortcuts that directly target T3 without extra arguments may also be updated; their originals are backed up. Running the T3 executable directly bypasses sync.
+By default, existing desktop or app-folder shortcuts that directly target the detected T3 executable without extra arguments are also connected to auto-sync; their originals are backed up. Shortcuts with extra arguments are preserved. `-SkipExistingShortcuts` leaves existing icons alone while still creating the dedicated shortcut.
 
-If T3 is already running, the shortcut opens the existing app without changing its database. Close it completely and use the shortcut again to sync. Background T3 servers must also be stopped.
+### Which shortcut should I use?
+
+Use **T3 Code (Auto Sync)** for the clearest result. Automatic updates run **before T3 starts**: fully exit T3, including any background server, then open this shortcut. If T3 is already running, the shortcut opens the existing app and defers the update until a later launch.
+
+| Launch route | Runs auto-sync? |
+| --- | --- |
+| T3 Code (Auto Sync) desktop shortcut | Yes, when T3 is fully stopped |
+| Existing icon connected by the installer | Yes, under the same condition |
+| Original T3 executable, unchanged Start menu or taskbar entry | No |
+
+The installer does not change Start menu or taskbar entries. When in doubt, use the dedicated desktop shortcut.
+
+### Upgrade or repair an existing installation
+
+Download and extract the current ZIP, then run `Install.cmd` again. This installs the current launcher and recreates the dedicated shortcut. **Downloading a ZIP or updating the GitHub checkout alone does not update an installed launcher.**
+
+If a conversation still looks old, first fully close T3 and reopen it from **T3 Code (Auto Sync)**. Then inspect `%USERPROFILE%\.t3\codex-autosync\last-sync.json` (or the corresponding custom data folder): `messages` shows additions, `deferred_t3_running` means T3 was still running, and `skipped` entries explain unavailable or divergent source history. New chats must be imported into T3 once before this tool can refresh them.
 
 For custom paths, run from the extracted directory:
 

@@ -18,7 +18,7 @@ import subprocess
 import sys
 from typing import Any, Dict, List, Optional
 
-VERSION = "1.0.2"
+VERSION = "1.0.3"
 SUPPORTED_MIGRATION = 81
 SCHEMA_TABLES = (
     "orchestration_events", "orchestration_v2_projection_threads",

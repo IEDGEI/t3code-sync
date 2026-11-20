@@ -6,7 +6,9 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%INSTALL_SCRIPT%" %*
 set "INSTALL_EXIT=%ERRORLEVEL%"
 if not "%INSTALL_EXIT%"=="0" goto failed
 echo.
-echo Done. Use the T3 Code (Auto Sync) desktop shortcut.
+echo Created: T3 Code (Auto Sync) shortcut (desktop by default).
+echo Fully exit T3, then use that shortcut to refresh imported chats.
+echo If T3 is already running, it opens without syncing.
 goto finish
 :failed
 echo.

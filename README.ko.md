@@ -2,13 +2,13 @@
 
 **Windows 미리보기 버전입니다.** T3 Code 0.1.9 / 데이터베이스 마이그레이션 81 및 지정된 스키마에서 검증한 로컬 실행 도구입니다. Linux와 macOS는 아직 지원하지 않습니다. T3 Tools 및 OpenAI와 무관한 독립 커뮤니티 도구입니다.
 
-[Windows 다운로드](https://github.com/IEDGEI/t3code-sync/releases/tag/v1.0.2-windows-preview) · [English](README.md) · [복구 및 제거](docs/RECOVERY.md)
+[Windows 다운로드](https://github.com/IEDGEI/t3code-sync/releases/tag/v1.0.3-windows-preview) · [English](README.md) · [복구 및 제거](docs/RECOVERY.md)
 
 ## Windows 설치
 
 1. Python 3.9 이상과 Node.js 22.13 이상을 설치하고, T3와 Codex를 한 번 실행합니다.
 2. T3에 갱신할 Codex 대화를 먼저 가져옵니다.
-3. [설치 ZIP](https://github.com/IEDGEI/t3code-sync/releases/tag/v1.0.2-windows-preview)의 압축을 풀고 `Install.cmd`를 실행합니다.
+3. [설치 ZIP](https://github.com/IEDGEI/t3code-sync/releases/tag/v1.0.3-windows-preview)의 압축을 풀고 `Install.cmd`를 실행합니다. **바탕화면에 T3 Code (Auto Sync) 바로가기가 자동 생성됩니다. 직접 만들 필요가 없습니다.**
 4. 설치 후 T3를 완전히 닫고 바탕화면의 **T3 Code (Auto Sync)**로 실행합니다.
 
 설치 프로그램은 T3·Python·Node.js 위치와 T3 데이터 호환성을 확인합니다. 런타임을 자동으로 다운로드하지 않습니다.
@@ -16,12 +16,33 @@
 
 ## 사용
 
-설치 후 바탕화면의 **T3 Code (Auto Sync)** 또는 변경된 기존 T3 바로가기로 실행합니다.
-T3가 완전히 종료되어 있으면, 이미 가져온 Codex 대화의 새 메시지를 반영한 뒤 T3를 엽니다.
-T3가 이미 실행 중이면 기록을 수정하지 않고 기존 창을 엽니다. 갱신하려면 T3를 닫은 뒤 해당 바로가기로 다시 실행하세요.
-원래 실행 파일을 직접 실행하면 자동 갱신 과정을 거치지 않습니다.
+**T3를 완전히 종료한 뒤 바탕화면의 T3 Code (Auto Sync)로 실행하세요.** 앱을 열기 직전에 이미 가져온 Codex 대화의 새 메시지를 반영합니다.
+T3가 실행 중이면 기존 창을 열고 갱신을 다음 실행으로 미룹니다. 백그라운드 T3 서버도 종료되어 있어야 합니다.
+
+| 실행 방법 | 자동 갱신 |
+| --- | --- |
+| 전용 T3 Code (Auto Sync) 바로가기 | T3가 완전히 종료돼 있을 때 실행 |
+| 설치 프로그램이 연결한 기존 바탕화면·앱 폴더 아이콘 | 같은 조건에서 실행 |
+| 원래 T3 실행 파일, 변경되지 않은 시작 메뉴·작업표시줄 아이콘 | 갱신기를 거치지 않음 |
+
+설치 프로그램은 기본적으로 감지한 T3 실행 파일을 직접 가리키고 추가 인자가 없는 기존 바탕화면·앱 폴더 바로가기도 자동 갱신에 연결합니다. 원래 바로가기는 백업합니다.
+추가 인자가 있는 바로가기는 유지하며, 시작 메뉴·작업표시줄 아이콘은 변경하지 않습니다. **어떤 아이콘인지 확실하지 않으면 전용 바로가기를 사용하세요.**
+`-SkipExistingShortcuts` 옵션을 쓰면 기존 아이콘은 유지하고 전용 바로가기만 생성합니다.
 
 기존 설치된 Python 3.9 이상과 Node.js 22.13 이상의 기본 SQLite 기능을 사용합니다. 네트워크 요청이나 추가 패키지 설치는 없습니다.
+
+## 기존 설치 업데이트·복구
+
+새 ZIP을 내려받아 압축을 풀고 **Install.cmd를 다시 실행**하면 설치된 갱신기를 교체하고 전용 바로가기를 다시 만듭니다.
+**ZIP 다운로드나 GitHub 소스 갱신만으로 이미 설치한 프로그램이 바뀌지는 않습니다.**
+
+대화가 갱신되지 않으면 T3를 완전히 종료하고 전용 바로가기로 다시 실행한 뒤, `%USERPROFILE%\.t3\codex-autosync\last-sync.json`을 확인하세요. 사용자 지정 데이터 폴더를 쓴다면 해당 폴더의 상태 파일을 확인합니다.
+
+- `messages`: 이번에 추가한 메시지 수
+- `deferred_t3_running`: T3가 실행 중이어서 갱신을 미룬 상태
+- 대화별 `skipped`: 원본 기록 없음, 기록 불일치 등 건너뛴 이유
+
+새 대화는 먼저 T3에서 한 번 가져와야 자동 갱신 대상이 됩니다.
 
 ## 갱신 범위
 

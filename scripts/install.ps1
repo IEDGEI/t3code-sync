@@ -157,4 +157,4 @@ foreach ($shortcutPath in $shortcutPaths) {
     $arguments = '"' + (Join-Path $InstallDir 'autosync.py') + '" --launch'
     [T3Sync.Shortcuts]::Save($shortcutPath, $pythonwExe, $arguments, $InstallDir, $T3Exe)
 }
-[ordered]@{ installed=$InstallDir; shortcuts=$shortcutPaths; state=$stateDir; shortcutBackups=$backupDir } | ConvertTo-Json -Depth 4
+[ordered]@{ installed=$InstallDir; desktopShortcut=$desktopShortcut; shortcuts=$shortcutPaths; state=$stateDir; shortcutBackups=$backupDir } | ConvertTo-Json -Depth 4
