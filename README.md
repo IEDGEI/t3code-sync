@@ -24,13 +24,19 @@ Requirements:
 1. Download **T3-Codex-AutoSync-Windows.zip** from the [Windows preview release](https://github.com/IEDGEI/t3code-sync/releases/tag/v1.1.0-windows-preview).
 2. Extract the archive, then run **Install.cmd**. Review the source before running it. Windows may display a warning because these scripts are unsigned.
 3. The installer finds the local executables, checks the database schema, and **automatically creates a desktop shortcut named T3 Code (Auto Sync)**. You do not need to create it yourself. It does not download dependencies or modify the T3 database.
-4. Fully close T3, then launch **T3 Code (Auto Sync)** from the desktop.
+4. **Wait for Codex to finish its final reply**, fully exit T3, then reopen it using **T3 Code (Auto Sync)** from the desktop.
 
 By default, existing desktop or app-folder shortcuts that directly target the detected T3 executable without extra arguments are also connected to auto-sync; their originals are backed up. Shortcuts with extra arguments are preserved. `-SkipExistingShortcuts` leaves existing icons alone while still creating the dedicated shortcut.
 
 ### Which shortcut should I use?
 
-Use **T3 Code (Auto Sync)** for the clearest result. Automatic updates run **before T3 starts**: fully exit T3, including any background server, then open this shortcut. If T3 is already running, the shortcut opens the existing app and defers the update until a later launch.
+Use **T3 Code (Auto Sync)** for the clearest result: **Codex final reply finishes → fully exit T3 → reopen using the Auto Sync shortcut**.
+
+1. Wait for Codex to finish its work and final reply.
+2. Fully exit T3, including any background T3 server.
+3. Open **T3 Code (Auto Sync)** from the desktop. Completed conversation history is refreshed before T3 starts.
+
+The current Codex turn, including its user messages and interim assistant updates, is deferred until it ends. After the final reply finishes, fully close and reopen T3 using this shortcut to import that turn. If T3 is already running, the shortcut opens the existing app and defers the update until a later launch.
 
 | Launch route | Runs auto-sync? |
 | --- | --- |
@@ -44,7 +50,7 @@ The installer does not change Start menu or taskbar entries. When in doubt, use 
 
 Download and extract the current ZIP, then run `Install.cmd` again. This installs the current launcher and recreates the dedicated shortcut. **Downloading a ZIP or updating the GitHub checkout alone does not update an installed launcher.**
 
-If a conversation still looks old, first fully close T3 and reopen it from **T3 Code (Auto Sync)**. Then inspect `%USERPROFILE%\.t3\codex-autosync\last-sync.json` (or the corresponding custom data folder): `messages` shows additions, `deferred_t3_running` means T3 was still running, and `skipped` entries explain unavailable or divergent source history. Missing chats are imported automatically only when their current Codex project matches one existing active T3 project. Add entirely new projects in T3 first.
+If a conversation still looks old, **first check that Codex has finished its final reply**, then fully close T3 and reopen it from **T3 Code (Auto Sync)**. Inspect `%USERPROFILE%\.t3\codex-autosync\last-sync.json` (or the corresponding custom data folder): `messages` shows additions, `deferred_t3_running` means T3 was still running, and `skipped` entries explain unavailable or divergent source history. Missing chats are imported automatically only when their current Codex project matches one existing active T3 project. Add entirely new projects in T3 first.
 
 For custom paths, run from the extracted directory:
 
